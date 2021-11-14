@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import xbmc
+import xbmcvfs
 import xbmcaddon
 import json
 
@@ -8,7 +9,7 @@ __addon__               = xbmcaddon.Addon()
 __addon_id__            = __addon__.getAddonInfo('id')
 __addonname__           = __addon__.getAddonInfo('name')
 __icon__                = __addon__.getAddonInfo('icon')
-__addonpath__           = xbmc.translatePath(__addon__.getAddonInfo('path'))
+__addonpath__           = xbmcvfs.translatePath(__addon__.getAddonInfo('path'))
 
 class Monitor(xbmc.Monitor):
     
@@ -40,6 +41,6 @@ class Monitor(xbmc.Monitor):
 
 monitor = Monitor()
 
-while(not xbmc.abortRequested):
+while(not monitor.abortRequested):
     xbmc.sleep(100)
     
