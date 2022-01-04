@@ -42,5 +42,5 @@ class Monitor(xbmc.Monitor):
 monitor = Monitor()
 
 while(not monitor.abortRequested):
-    xbmc.sleep(100)
+    xbmc.sleep(10000)
     

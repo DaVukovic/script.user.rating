@@ -6,13 +6,14 @@ import xbmc
 import sys
 import os
 import xbmcaddon
+import xbmcvfs
 import importlib
 
 __addon__               = xbmcaddon.Addon()
 __addon_id__            = __addon__.getAddonInfo('id')
 __addonname__           = __addon__.getAddonInfo('name')
 __icon__                = __addon__.getAddonInfo('icon')
-__addonpath__           = xbmc.translatePath(__addon__.getAddonInfo('path'))
+__addonpath__           = xbmcvfs.translatePath(__addon__.getAddonInfo('path'))
 __lang__                = __addon__.getLocalizedString
 __path__                = os.path.join(__addonpath__, 'resources', 'lib' )
 __path_img__            = os.path.join(__addonpath__, 'resources', 'media' )

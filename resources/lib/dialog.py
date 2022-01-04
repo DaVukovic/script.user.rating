@@ -3,11 +3,12 @@
 import xbmcaddon
 import xbmcgui
 import xbmc
+import xbmcvfs
 import os
 
 __addon__               = xbmcaddon.Addon()
 __addon_id__            = __addon__.getAddonInfo('id')
-__addonpath__           = xbmc.translatePath(__addon__.getAddonInfo('path'))
+__addonpath__           = xbmcvfs.translatePath(__addon__.getAddonInfo('path'))
 
 class DIALOG:
     def start(self, xml_file, labels={}, textboxes={}, buttons=[], list=0):

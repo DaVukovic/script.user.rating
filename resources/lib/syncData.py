@@ -3,6 +3,7 @@
 import xbmcgui
 import xbmcaddon
 import xbmc
+import xbmcvfs
 import os
 import json
 
@@ -10,7 +11,7 @@ __addon__               = xbmcaddon.Addon()
 __addon_id__            = __addon__.getAddonInfo('id')
 __addonname__           = __addon__.getAddonInfo('name')
 __lang__                = __addon__.getLocalizedString
-__datapath__            = xbmc.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
+__datapath__            = xbmcvfs.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
 
 import debug
 import dialog
