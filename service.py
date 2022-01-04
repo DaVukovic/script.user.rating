@@ -37,10 +37,10 @@ class Monitor(xbmc.Monitor):
                     idDB = data['item']['id']
                     mType = data['item']['type']
                     if self.item is not None and self.item['id'] == idDB and self.item['type'] == mType:
-                        xbmc.executebuiltin('XBMC.RunScript(' + __addon_id__ + ', ' + method + ', ' + str(idDB) + ', ' + mType + ')')
+                        xbmc.executebuiltin('RunScript(' + __addon_id__ + ', ' + method + ', ' + str(idDB) + ', ' + mType + ')')
 
 monitor = Monitor()
 
-while(not monitor.abortRequested):
+while not monitor.abortRequested():
     xbmc.sleep(10000)
     
