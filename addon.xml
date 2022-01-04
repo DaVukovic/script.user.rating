@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="script.user.rating"
     name="User Rating"
-    version="1.0.4"
+    version="1.0.5"
     provider-name="Regss (modified by DaVu)">
     <requires>
         <import addon="xbmc.python" version="3.0.0" />
@@ -14,7 +14,7 @@
         <summary lang="de">Einfache Bewertung von Medien mit dem Stern-System</summary>
         <description lang="en">Help rate your media showing box with star rating system</description>
         <description lang="pl">Pomaga oceniać posiadane zasoby za pomocą systemu gwiazdek</description>
-        <description lang="de">Unterstützt beim bewerten der Medien durch eine Box mit Stern-Bewertung-Systems</description>
+        <description lang="de">Unterstützt beim Bewerten der Medien durch eine Box mit Stern-Bewertung-System</description>
         <platform>all</platform>
         <license>GNU GENERAL PUBLIC LICENSE. Version 3, 29 June 2007</license>
         <forum>http://forum.kodi.tv/showthread.php?tid=264729</forum>
