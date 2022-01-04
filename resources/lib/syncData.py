@@ -3,6 +3,7 @@
 import xbmcgui
 import xbmcaddon
 import xbmc
+import xbmcvfs
 import os
 import json
 
@@ -10,14 +11,16 @@ __addon__               = xbmcaddon.Addon()
 __addon_id__            = __addon__.getAddonInfo('id')
 __addonname__           = __addon__.getAddonInfo('name')
 __lang__                = __addon__.getLocalizedString
-__datapath__            = xbmc.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
+__datapath__            = xbmcvfs.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
 
-import debug
-import dialog
 
-__LANGTYPE__ = {'movies': __lang__(32122), 'tvshows': __lang__(32123), 'tvshows': __lang__(32124)}
+from . import debug
+from . import dialog
 
-class SYNC:
+
+__LANGTYPE__ = {'movies': __lang__(32121), 'tvshows': __lang__(32122), 'episodes': __lang__(32123)}
+
+class SYNC(object):
     
     def start(self):
     
@@ -254,7 +257,7 @@ class SYNC:
             jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.Get' + type.title() + 's", "params": {"properties": ["title", "userrating", "season", "episode", "tvshowid"]}, "id": 1}')
         else:
             jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.Get' + type.title() + 's", "params": {"properties": ["title", "userrating"]}, "id": 1}')
-        jsonGet = json.loads(unicode(jsonGet, 'utf-8', errors='ignore'))
+        jsonGet = json.loads(jsonGet)
         debug.debug('search' + type.title() + 'ID: ' + str(jsonGet))
         
         tvshowTitle = {}
@@ -270,7 +273,7 @@ class SYNC:
                     if 'episode' in type:
                         if i['tvshowid'] not in tvshowTitle.keys():
                             jsonGet2 = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShowDetails", "params": {"tvshowid": ' + str(i['tvshowid']) + ', "properties": ["title"]}, "id": 1}')
-                            jsonGet2 = json.loads(unicode(jsonGet2, 'utf-8', errors='ignore'))
+                            jsonGet2 = json.loads(jsonGet2)
                             if 'result' in jsonGet2 and 'tvshowdetails' in jsonGet2['result'] and 'title' in jsonGet2['result']['tvshowdetails']:
                                 tvshowTitle[i['tvshowid']] = jsonGet2['result']['tvshowdetails']['title'] + ' - '
                             else:
@@ -289,7 +292,7 @@ class SYNC:
     def checkToUpdate(self, type, rated):
         toUpdate = {}
         jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.Get' + type.title() + 's", "params": {"properties": ["title", "imdbnumber"]}, "id": 1}')
-        jsonGet = json.loads(unicode(jsonGet, 'utf-8', errors='ignore'))
+        jsonGet = json.loads(jsonGet)
         debug.debug('search' + type.title() + 'ID: ' + str(jsonGet))
         if 'result' in jsonGet and type + 's' in jsonGet['result']:
             for i in jsonGet['result'][type + 's']:

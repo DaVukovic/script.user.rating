@@ -42,7 +42,7 @@ msgstr ""
 
 #: Settings
 msgctxt "#32008"
-msgid "Debuging"
+msgid "Debugging"
 msgstr ""
 
 #: Settings
@@ -67,7 +67,7 @@ msgstr ""
 
 #: Settings
 msgctxt "#32014"
-msgid "TMDB Loign"
+msgid "TMDB Login"
 msgstr ""
 
 #: Settings
@@ -82,7 +82,7 @@ msgstr ""
 
 #: Settings
 msgctxt "#32017"
-msgid "TMDB second account Loign"
+msgid "TMDB second account Login"
 msgstr ""
 
 #: Settings
@@ -112,7 +112,7 @@ msgstr ""
 
 #: Settings
 msgctxt "#32024"
-msgid "TVDB Loign"
+msgid "TVDB Login"
 msgstr ""
 
 #: Settings
@@ -127,7 +127,7 @@ msgstr ""
 
 #: Settings
 msgctxt "#32027"
-msgid "TVDB second account Loign"
+msgid "TVDB second account Login"
 msgstr ""
 
 #: Settings

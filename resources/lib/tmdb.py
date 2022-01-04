@@ -5,8 +5,8 @@ import xbmc
 import xbmcvfs
 import xbmcgui
 import os
-import urllib
-import httplib
+import http.client as httplib
+from urllib.parse import urlencode
 import json
 import re
 
@@ -14,9 +14,9 @@ __addon__               = xbmcaddon.Addon()
 __addon_id__            = __addon__.getAddonInfo('id')
 __addonname__           = __addon__.getAddonInfo('name')
 __lang__                = __addon__.getLocalizedString
-__datapath__            = xbmc.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
+__datapath__            = xbmcvfs.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
 
-import debug
+from . import debug
 
 API_KEY     = '1009b5cde25c7b0692d51a7db6e49cbd'
 API_URL     = 'https://api.themoviedb.org/3/'
@@ -138,7 +138,7 @@ class TMDB:
         kodiID = {}
         if 'movie' in type:
             jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "imdbnumber", "art"]}, "id": 1}')
-            jsonGet = json.loads(unicode(jsonGet, 'utf-8', errors='ignore'))
+            jsonGet = json.loads(jsonGet)
             if 'result' in jsonGet and 'movies' in jsonGet['result']:
                 for m in jsonGet['result']['movies']:
                     tmdb_search = re.search('tmdb', str(m))
@@ -147,7 +147,7 @@ class TMDB:
         
         if 'tvshow' in type:
             jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "imdbnumber", "art"]}, "id": 1}')
-            jsonGet = json.loads(unicode(jsonGet, 'utf-8', errors='ignore'))
+            jsonGet = json.loads(jsonGet)
             if 'result' in jsonGet and 'tvshows' in jsonGet['result']:
                 for m in jsonGet['result']['tvshows']:
                     tmdb_search = re.search('tmdb', str(m))
@@ -158,7 +158,7 @@ class TMDB:
             # KODI don't have site IDs for episodes
             # To get KODI IDs we must get TVshow ID and sseason and episode enum
             jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "imdbnumber", "art"]}, "id": 1}')
-            jsonGet = json.loads(unicode(jsonGet, 'utf-8', errors='ignore'))
+            jsonGet = json.loads(jsonGet)
             if 'result' in jsonGet and 'tvshows' in jsonGet['result']:
                 for m in jsonGet['result']['tvshows']:
                     tmdb_search = re.search('tmdb', str(m))
@@ -167,7 +167,7 @@ class TMDB:
                         
                         # for each tvshow that have rated episode get episodes list
                         jsonGetE = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": {"tvshowid": ' + tvshowid + ', "properties": ["title", "episode", "season"]}, "id": 1}')
-                        jsonGetE = json.loads(unicode(jsonGetE, 'utf-8', errors='ignore'))
+                        jsonGetE = json.loads(jsonGetE)
                         if 'result' in jsonGetE and 'episodes' in jsonGetE['result']:
                             for epi in jsonGetE['result']['episodes']:
                                 
@@ -180,7 +180,6 @@ class TMDB:
     
     def searchMovieID(self, item):
         jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": {"movieid": ' + str(item['dbID']) + ', "properties": ["imdbnumber"]}, "id": 1}')
-        jsonGet = unicode(jsonGet, 'utf-8', errors='ignore')
         jsonGetResponse = json.loads(jsonGet)
         debug.debug('searchMovieID: ' + str(jsonGetResponse))
         if 'result' in jsonGetResponse and 'moviedetails' in jsonGetResponse['result'] and 'imdbnumber' in jsonGetResponse['result']['moviedetails'] and jsonGetResponse['result']['moviedetails']['imdbnumber'][:2] == 'tt':
@@ -191,7 +190,6 @@ class TMDB:
         
     def searchTVshowID(self, item):
         jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShowDetails", "params": {"tvshowid": ' + str(item['dbID']) + ', "properties": ["imdbnumber", "art"]}, "id": 1}')
-        jsonGet = unicode(jsonGet, 'utf-8', errors='ignore')
         jsonGetResponse = json.loads(jsonGet)
         debug.debug('searchTVshowID: ' + str(jsonGetResponse))
         tmdb_search = re.search('tmdb', str(jsonGetResponse))
@@ -203,7 +201,6 @@ class TMDB:
     
     def searchEpisodeID(self, item):
         jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": {"episodeid": ' + str(item['dbID']) + ', "properties": ["season", "episode", "tvshowid"]}, "id": 1}')
-        jsonGet = unicode(jsonGet, 'utf-8', errors='ignore')
         jsonGetResponse = json.loads(jsonGet)
         debug.debug('searchEpisodeID: ' + str(jsonGetResponse))
         if 'result' in jsonGetResponse and 'episodedetails' in jsonGetResponse['result'] and 'tvshowid' in jsonGetResponse['result']['episodedetails']:
@@ -254,8 +251,8 @@ class TMDB:
         # prepare values
         get['api_key'] = API_KEY
         
-        get = urllib.urlencode(get)
-        post = urllib.urlencode(post)
+        get = urlencode(get)
+        post = urlencode(post)
         
         # send request
         req = httplib.HTTPSConnection(API_HOST)
@@ -269,7 +266,7 @@ class TMDB:
         
         # get json
         try:
-            output = unicode(html, 'utf-8', errors='ignore')
+            output = html
             output = json.loads(output)
         except Exception as Error:
             debug.debug('[GET JSON ERROR]: ' + str(Error))
