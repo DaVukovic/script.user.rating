@@ -17,7 +17,7 @@ __addon_id__            = __addon__.getAddonInfo('id')
 __addonname__           = __addon__.getAddonInfo('name')
 __lang__                = __addon__.getLocalizedString
 
-import debug
+import tools
 
 API_URL         = 'https://ssl.filmweb.pl/api'
 API_KEY         = 'qjcGhW2JnvGT9dfCt3uT_jozR3s'

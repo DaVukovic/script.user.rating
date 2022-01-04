@@ -16,7 +16,7 @@ __addonname__           = __addon__.getAddonInfo('name')
 __lang__                = __addon__.getLocalizedString
 __datapath__            = xbmcvfs.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
 
-import debug
+import tools
 
 API_KEY     = 'D460D7E8FF6842B6'
 API_URL     = 'https://api.thetvdb.com/'

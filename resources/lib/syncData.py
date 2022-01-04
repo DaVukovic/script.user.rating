@@ -14,11 +14,12 @@ __lang__                = __addon__.getLocalizedString
 __datapath__            = xbmcvfs.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
 
 
-from . import debug
+from . import tools
 from . import dialog
 
 
 __LANGTYPE__ = {'movies': __lang__(32121), 'tvshows': __lang__(32122), 'episodes': __lang__(32123)}
+
 
 class SYNC(object):
     

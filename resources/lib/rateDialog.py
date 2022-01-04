@@ -3,7 +3,6 @@
 import xbmcaddon
 import xbmcgui
 import xbmcvfs
-import xbmc
 import os
 
 __addon__               = xbmcaddon.Addon()
@@ -37,19 +36,8 @@ REMOTE_8                    = 66
 REMOTE_9                    = 67
 NUMBERS_GROUP = [REMOTE_0, REMOTE_1, REMOTE_2, REMOTE_3, REMOTE_4, REMOTE_5, REMOTE_6, REMOTE_7, REMOTE_8, REMOTE_9]
 
-buttons = {
-    11020: 0,
-    11021: 1,
-    11022: 2,
-    11023: 3,
-    11024: 4,
-    11025: 5,
-    11026: 6,
-    11027: 7,
-    11028: 8,
-    11029: 9,
-    11030: 10
-}
+buttons = [11020, 11021, 11022, 11023, 11024, 11025, 11026, 11027, 11028, 11029, 11030]
+ID_OFFSET = 11020
 
 class DIALOG:
     def start(self, item, profile):
@@ -73,10 +61,10 @@ class SHOW(xbmcgui.WindowXMLDialog):
     def onInit(self):
         self.getControl(10010).setLabel('[B]' + self.profile + '[/B]')
         self.getControl(10012).setLabel(self.item['title'])
-        self.setFocus(self.getControl(buttons.keys()[self.item['rating']]))
-    
+        self.setFocus(self.getControl(buttons[self.item['rating']]))
+
     def onClick(self, controlID):
-        self.rating = buttons[controlID]
+        self.rating = controlID - ID_OFFSET
         self.close()
         
     def onAction(self, action):

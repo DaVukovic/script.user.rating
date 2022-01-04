@@ -16,7 +16,7 @@ __addonname__           = __addon__.getAddonInfo('name')
 __lang__                = __addon__.getLocalizedString
 __datapath__            = xbmcvfs.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
 
-from . import debug
+from . import tools
 
 API_KEY     = '1009b5cde25c7b0692d51a7db6e49cbd'
 API_URL     = 'https://api.themoviedb.org/3/'
@@ -33,7 +33,7 @@ class TMDB:
     def sendRating(self, items):
         # check login
         if self.tryLogin() is False:
-            debug.notify(self.login + ' - ' + __lang__(32110), True, 'TMDB')
+            tools.notify(self.login + ' - ' + __lang__(32110), True, 'TMDB')
             return
         
         item_count = len(items)
@@ -76,13 +76,13 @@ class TMDB:
                 
         bar.close()
         
-        debug.debug('Rate sended to TMDB')
-        debug.notify(self.login + ' - ' + __lang__(32101), False, 'TMDB')
+        tools.debug('Rate sended to TMDB')
+        tools.notify(self.login + ' - ' + __lang__(32101), False, 'TMDB')
         
     def prepareRequest(self, id, method, rating):
         if id == 0:
-            debug.debug('No tmdb/imdb id found')
-            debug.notify(__lang__(32102), True, 'TMDB')
+            tools.debug('No tmdb/imdb id found')
+            tools.notify(__lang__(32102), True, 'TMDB')
             return
         
         # send rating
@@ -96,7 +96,7 @@ class TMDB:
     def getRated(self, type):
         # check login
         if self.tryLogin() is False:
-            debug.notify(self.login + ' - ' + __lang__(32110), True, 'TMDB')
+            tools.notify(self.login + ' - ' + __lang__(32110), True, 'TMDB')
             return
         
         if 'movie' in type:
@@ -181,7 +181,7 @@ class TMDB:
     def searchMovieID(self, item):
         jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": {"movieid": ' + str(item['dbID']) + ', "properties": ["imdbnumber"]}, "id": 1}')
         jsonGetResponse = json.loads(jsonGet)
-        debug.debug('searchMovieID: ' + str(jsonGetResponse))
+        tools.debug('searchMovieID: ' + str(jsonGetResponse))
         if 'result' in jsonGetResponse and 'moviedetails' in jsonGetResponse['result'] and 'imdbnumber' in jsonGetResponse['result']['moviedetails'] and jsonGetResponse['result']['moviedetails']['imdbnumber'][:2] == 'tt':
             id = jsonGetResponse['result']['moviedetails']['imdbnumber']
         else:
@@ -191,7 +191,7 @@ class TMDB:
     def searchTVshowID(self, item):
         jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShowDetails", "params": {"tvshowid": ' + str(item['dbID']) + ', "properties": ["imdbnumber", "art"]}, "id": 1}')
         jsonGetResponse = json.loads(jsonGet)
-        debug.debug('searchTVshowID: ' + str(jsonGetResponse))
+        tools.debug('searchTVshowID: ' + str(jsonGetResponse))
         tmdb_search = re.search('tmdb', str(jsonGetResponse))
         if tmdb_search is not None and 'result' in jsonGetResponse and 'tvshowdetails' in jsonGetResponse['result'] and 'imdbnumber' in jsonGetResponse['result']['tvshowdetails']:
             id = jsonGetResponse['result']['tvshowdetails']['imdbnumber']
@@ -202,7 +202,7 @@ class TMDB:
     def searchEpisodeID(self, item):
         jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": {"episodeid": ' + str(item['dbID']) + ', "properties": ["season", "episode", "tvshowid"]}, "id": 1}')
         jsonGetResponse = json.loads(jsonGet)
-        debug.debug('searchEpisodeID: ' + str(jsonGetResponse))
+        tools.debug('searchEpisodeID: ' + str(jsonGetResponse))
         if 'result' in jsonGetResponse and 'episodedetails' in jsonGetResponse['result'] and 'tvshowid' in jsonGetResponse['result']['episodedetails']:
             epiosdeData = jsonGetResponse['result']['episodedetails']
         else:
@@ -214,7 +214,7 @@ class TMDB:
         ret = self.sendRequest('account', 'GET', {'session_id': self.session_id})
         if ret is not False and 'id' in ret:
             self.account = str(ret['id'])
-            debug.debug('TMDB Session exist. No logging needed')
+            tools.debug('TMDB Session exist. No logging needed')
             return True
         
         # login if session not exist
@@ -259,9 +259,9 @@ class TMDB:
         req.request(http_method, API_URL + method + '?' + get, post)
         response = req.getresponse()
         html = response.read()
-        debug.debug('Request: ' + html)
+        tools.debug('Request: ' + html)
         if response.status != 200 and response.status != 201:
-            debug.debug('[ERROR ' + str(response.status) + ']: ' + html)
+            tools.debug('[ERROR ' + str(response.status) + ']: ' + html)
             return False
         
         # get json
@@ -269,7 +269,7 @@ class TMDB:
             output = html
             output = json.loads(output)
         except Exception as Error:
-            debug.debug('[GET JSON ERROR]: ' + str(Error))
+            tools.debug('[GET JSON ERROR]: ' + str(Error))
             return {}
             
         return output
