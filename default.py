@@ -26,7 +26,8 @@ class GUI(object):
         item = {}
 
         # open sync dialog if no parameter
-        if len(sys.argv) == 0 or len(sys.argv[0]) == 0:
+        debug('arguments', len(sys.argv))
+        if len(sys.argv) == 1:
             debug('Starting Rating Dialog...')
             SYNC().start()
             return
@@ -40,9 +41,9 @@ class GUI(object):
             self.runFromService = False
             item['mType'] = xbmc.getInfoLabel('ListItem.DBTYPE')
             item['dbID'] = xbmc.getInfoLabel('ListItem.DBID')
+            item['title'] = xbmc.getInfoLabel('ListItem.Title')
             item['rating'] = 0 if xbmc.getInfoLabel('ListItem.UserRating') == "" else \
                 int(xbmc.getInfoLabel('ListItem.UserRating'))
-            item['title'] = xbmc.getInfoLabel('ListItem.Title')
 
         debug('RunFromService', self.runFromService)
         debug('Retrieved data',
@@ -78,14 +79,9 @@ class GUI(object):
         query = {'method': 'VideoLibrary.Get%sDetails' % mType.capitalize(),
                  'params': {'properties': ['title', 'userrating'], '%sid' % mType: int(dbID)}}
         res = jsonrpc(query)
-
-        title = ''
-        rating = 0
-        if res:
-            title = res['%sdetails' % mType]['title']
-            rating = res['%sdetails' % mType]['userrating']
-
-        return {'dbID': dbID, 'mType': mType, 'title': title, 'rating': rating}
+        title = res['%sdetails' % mType].get('title', '')
+        rating = res['%sdetails' % mType].get('userrating', '')
+        return {'dbID': int(dbID), 'mType': mType, 'title': title, 'rating': rating}
 
     def addVote(self, item):
         query = {'method': 'VideoLibrary.Set%sDetails' % item['mType'].capitalize(),
@@ -93,17 +89,16 @@ class GUI(object):
         debug('Query', query)
         res = jsonrpc(query)
         if res:
-            debug('Voting updated', item['mType'].title())
+            debug('local voting updated', item['title'])
 
     def sendToWebsites(self, item, master):
 
-        pass
-        '''
         # send rate to tmdb
         if 'true' in __addon__.getSetting('enableTMDB' + item['mType']):
             import resources.lib.tmdb as tmdb
-            tmdb.TMDB(master).sendRating([item])
+            tmdb.TMDB(master).sendRating(item)
 
+        '''
         # send rate to tvdb
         if 'true' in __addon__.getSetting('enableTVDB' + item['mType']):
             import resources.lib.tvdb as tvdb

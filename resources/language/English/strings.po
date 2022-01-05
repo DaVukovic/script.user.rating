@@ -187,7 +187,7 @@ msgstr ""
 
 #: GUI
 msgctxt "#32101"
-msgid "Rate sended"
+msgid "%s - Rating sended"
 msgstr ""
 
 #: GUI
@@ -197,7 +197,7 @@ msgstr ""
 
 #: GUI
 msgctxt "#32110"
-msgid "Login Error"
+msgid "%s - Login Error"
 msgstr ""
 
 #: GUI
