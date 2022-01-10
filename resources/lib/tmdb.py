@@ -1,103 +1,76 @@
 # -*- coding: utf-8 -*-
-
+import socket
 import xbmcaddon
 import xbmc
-import xbmcvfs
 import xbmcgui
+import xbmcvfs
 import os
+import requests
 import http.client as httplib
 from urllib.parse import urlencode
 import json
 import re
 
-__addon__               = xbmcaddon.Addon()
-__addon_id__            = __addon__.getAddonInfo('id')
-__addonname__           = __addon__.getAddonInfo('name')
-__lang__                = __addon__.getLocalizedString
-__datapath__            = xbmcvfs.translatePath(os.path.join('special://profile/addon_data/', __addon_id__)).replace('\\', '/') + '/'
+__addon__ = xbmcaddon.Addon()
+__addon_id__ = __addon__.getAddonInfo('id')
+__addonname__ = __addon__.getAddonInfo('name')
+__lang__ = __addon__.getLocalizedString
+__datapath__ = os.path.join(xbmcvfs.translatePath(__addon__.getAddonInfo('profile')), 'tmdb')
 
-from . import debug
+from . import tools
 
-API_KEY     = '1009b5cde25c7b0692d51a7db6e49cbd'
-API_URL     = 'https://api.themoviedb.org/3/'
-API_HOST    = 'api.themoviedb.org'
+API_KEY = '1009b5cde25c7b0692d51a7db6e49cbd'
+API_URL = 'https://api.themoviedb.org/3/'
+API_HOST = 'api.themoviedb.org/'
+
 
 class TMDB:
     def __init__(self, master):
         self.login = __addon__.getSetting('loginTMDB') if master is True else __addon__.getSetting('loginTMDBsec')
-        self.passwd  = __addon__.getSetting('passTMDB') if master is True else __addon__.getSetting('passTMDBsec')
-        
-        # load user data
-        self.loadUSERdata()
-        
-    def sendRating(self, items):
+        self.passwd = __addon__.getSetting('passTMDB') if master is True else __addon__.getSetting('passTMDBsec')
+        self.session_id = None
+
+    def sendRating(self, item):
         # check login
-        if self.tryLogin() is False:
-            debug.notify(self.login + ' - ' + __lang__(32110), True, 'TMDB')
+        if not self.tryLogin():
+            tools.notify( __lang__(32110) % self.login, force=True, icon=xbmcgui.NOTIFICATION_ERROR)
             return
+
+        ret = False
+        if item['mType'] == 'movie':
+            imdb = self.searchMovieID(item)
+            ret = self.prepareRequest('movie/', str(imdb), '/rating', item['new_rating'])
+
+        elif item['mType'] == 'tvshow':
+            imdb = self.searchTVshowID(item)
+            ret = self.prepareRequest('tv/', str(imdb), '/rating', item['new_rating'])
+
+        elif item['mType'] == 'episode':
+            episodeData = self.searchEpisodeID(item)
+            tvshowid = self.searchTVshowID({'dbID': episodeData['tvshowid']})
+            ret = self.prepareRequest('tv/',  str(tvshowid), '/season/' + str(episodeData['season']) +
+                                      '/episode/' + str(episodeData['episode']) + '/rating', item['new_rating'])
+        if not ret: return False
+
+        tools.debug('TMDB rating', 'send %s for %s \'%s\'' % (item['new_rating'], item['mType'], item['title']))
+        tools.notify(__lang__(32101) % self.login, force=False)
         
-        item_count = len(items)
-        item_added = 0
-        bar = xbmcgui.DialogProgress()
-        bar.create(__addonname__, '')
-    
-        for item in items:
-            # bar
-            item_added += 1
-            p = int((float(100) / float(item_count)) * float(item_added))
-            bar.update(p, str(item_added) + ' / ' + str(item_count) + ' - ' + item['title'])
-            
-            # search id and send rate
-            if item['mType'] == 'movie':
-                id = self.searchMovieID(item)
-                ret = self.prepareRequest(id, 'movie/' + str(id) + '/rating', item['new_rating'])
-                if ret is False:
-                    bar.close()
-                    return False
-                    
-            if item['mType'] == 'tvshow':
-                id = self.searchTVshowID(item)
-                ret = self.prepareRequest(id, 'tv/' + str(id) + '/rating', item['new_rating'])
-                if ret is False:
-                    bar.close()
-                    return False
-                    
-            if item['mType'] == 'episode':
-                episodeData = self.searchEpisodeID(item)
-                tvshowid = self.searchTVshowID({'dbID': str(episodeData['tvshowid'])})
-                ret = self.prepareRequest(tvshowid, 'tv/' + str(tvshowid) + '/season/' + str(episodeData['season']) + '/episode/' + str(episodeData['episode']) + '/rating', item['new_rating'])
-                if ret is False:
-                    bar.close()
-                    return False
-            
-            if bar.iscanceled():
-                bar.close()
-                return
-                
-        bar.close()
-        
-        debug.debug('Rate sended to TMDB')
-        debug.notify(self.login + ' - ' + __lang__(32101), False, 'TMDB')
-        
-    def prepareRequest(self, id, method, rating):
-        if id == 0:
-            debug.debug('No tmdb/imdb id found')
-            debug.notify(__lang__(32102), True, 'TMDB')
-            return
-        
-        # send rating
-        if rating > 0:
-            ret = self.sendRequest(method, 'POST', {'session_id': self.session_id}, {'value': rating})
-        else:
-            ret = self.sendRequest(method, 'DELETE', {'session_id': self.session_id})
-        
-        return ret
-    
+    def prepareRequest(self, endpoint, imdb, opt, rating):
+        try:
+            r = requests.post(API_URL + endpoint + imdb + opt,
+                              params={'api_key': API_KEY, 'session_id': self.session_id},
+                              data={'value': rating})
+            r.raise_for_status()
+            return r.json().get('success', False)
+
+        except (socket.gaierror, requests.HTTPError, requests.ConnectionError) as e: tools.debug(e)
+        return False
+
     def getRated(self, type):
         # check login
         if self.tryLogin() is False:
-            debug.notify(self.login + ' - ' + __lang__(32110), True, 'TMDB')
-            return
+            tools.notify( __lang__(32110) % self.login, force=True, icon=xbmcgui.NOTIFICATION_ERROR)
+            return False
         
         if 'movie' in type:
             method = 'movies'
@@ -179,74 +152,89 @@ class TMDB:
         return kodiID
     
     def searchMovieID(self, item):
-        jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": {"movieid": ' + str(item['dbID']) + ', "properties": ["imdbnumber"]}, "id": 1}')
-        jsonGetResponse = json.loads(jsonGet)
-        debug.debug('searchMovieID: ' + str(jsonGetResponse))
-        if 'result' in jsonGetResponse and 'moviedetails' in jsonGetResponse['result'] and 'imdbnumber' in jsonGetResponse['result']['moviedetails'] and jsonGetResponse['result']['moviedetails']['imdbnumber'][:2] == 'tt':
-            id = jsonGetResponse['result']['moviedetails']['imdbnumber']
-        else:
-            id = 0
-        return id
-        
+        query = {'method': 'VideoLibrary.GetMovieDetails',
+                 'params': {'movieid': item['dbID'], 'properties': ['imdbnumber']}}
+        res = tools.jsonrpc(query)
+        if res: return res['moviedetails'].get('imdbnumber', 0)
+        return False
+
     def searchTVshowID(self, item):
-        jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShowDetails", "params": {"tvshowid": ' + str(item['dbID']) + ', "properties": ["imdbnumber", "art"]}, "id": 1}')
-        jsonGetResponse = json.loads(jsonGet)
-        debug.debug('searchTVshowID: ' + str(jsonGetResponse))
-        tmdb_search = re.search('tmdb', str(jsonGetResponse))
-        if tmdb_search is not None and 'result' in jsonGetResponse and 'tvshowdetails' in jsonGetResponse['result'] and 'imdbnumber' in jsonGetResponse['result']['tvshowdetails']:
-            id = jsonGetResponse['result']['tvshowdetails']['imdbnumber']
-        else:
-            id = 0
-        return id
-    
+        query = {'method': 'VideoLibrary.GetTVShowDetails',
+                 'params': {'tvshowid': item['dbID'], 'properties': ['imdbnumber']}}
+        res = tools.jsonrpc(query)
+        if res: return res['tvshowdetails'].get('imdbnumber', 0)
+        return False
+
     def searchEpisodeID(self, item):
-        jsonGet = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": {"episodeid": ' + str(item['dbID']) + ', "properties": ["season", "episode", "tvshowid"]}, "id": 1}')
-        jsonGetResponse = json.loads(jsonGet)
-        debug.debug('searchEpisodeID: ' + str(jsonGetResponse))
-        if 'result' in jsonGetResponse and 'episodedetails' in jsonGetResponse['result'] and 'tvshowid' in jsonGetResponse['result']['episodedetails']:
-            epiosdeData = jsonGetResponse['result']['episodedetails']
-        else:
-            episodeData = {}
-        return epiosdeData
-        
+        query = {'method': 'VideoLibrary.GetEpisodeDetails',
+                 'params': {'episodeid': item['dbID'], 'properties': ['season', 'episode', 'tvshowid']}}
+        res = tools.jsonrpc(query)
+        if res: return res.get('episodedetails')
+        return False
+
     def tryLogin(self):
-        #get account id
-        ret = self.sendRequest('account', 'GET', {'session_id': self.session_id})
-        if ret is not False and 'id' in ret:
-            self.account = str(ret['id'])
-            debug.debug('TMDB Session exist. No logging needed')
-            return True
-        
-        # login if session not exist
-        # get new token
-        ret = self.sendRequest('authentication/token/new', 'GET')
-        if ret is not False and 'success' in ret:
-            self.request_token = ret['request_token']
-        else:
-            return False
-            
-        # validate token
-        ret = self.sendRequest('authentication/token/validate_with_login', 'GET', {'request_token': self.request_token, 'username': self.login, 'password': self.passwd})
-        if ret is False:
-            return False
-        
-        #get session id
-        ret = self.sendRequest('authentication/session/new', 'GET', {'request_token': self.request_token})
-        if ret is not False and 'success' in ret:
-            self.session_id = ret['session_id']
-        else:
-            return False
-        
-        #get account id
-        ret = self.sendRequest('account', 'GET', {'session_id': self.session_id})
-        if ret is not False and 'id' in ret:
-            self.account = str(ret['id'])
-            self.saveUSERdata()
-        else:
-            return False
-       
+        if self.session_id is None:
+            user, self.session_id = self.get_sid(__datapath__, username=self.login)
+            tools.debug('TMDB', 'SID for %s from file: %s' % (user, self.session_id))
+        try:
+            if self.session_id:
+                r = requests.get(API_URL + 'account', params={'api_key': API_KEY, 'session_id': self.session_id})
+                if r.json().get('id', False):
+                    tools.debug('TMDB', 'Valid session')
+                    return True
+                else:
+                    self.session_id = None
+
+            if not self.session_id:
+
+                if not self.login:
+                    # create guest session
+                    tools.debug('TMDB','create guest session')
+                    r = requests.get(API_URL + 'authentication/guest_session/new', params={'api_key': API_KEY})
+                    r.raise_for_status()
+                    if r.json().get('success', False):
+                        self.set_sid(__datapath__, r.json().get('guest_session_id', False), 'guest')
+                        return True
+                else:
+                    # create user session with authentication
+                    print('create user session with authentication')
+                    r = requests.get(API_URL + 'authentication/token/new', params={'api_key': API_KEY})
+                    r.raise_for_status()
+                    token = r.json().get('request_token', False)
+                    if token:
+                        r = requests.get(API_URL + 'authentication/token/validate_with_login',
+                                         params={'api_key': API_KEY,
+                                                 'request_token': token, 'username': self.login,
+                                                 'password': self.passwd})
+                        r.raise_for_status()
+                        if r.json().get('success', False):
+                            r = requests.get(API_URL + 'authentication/session/new',
+                                             params={'api_key': API_KEY, 'request_token': token})
+                            self.set_sid(__datapath__, r.json().get('session_id', False), self.login)
+                            return True
+
+        except (socket.gaierror, requests.HTTPError, requests.ConnectionError) as e: tools.debug(e)
+        return False
+
+    def get_sid(self, file, username=None):
+        if username is None: username = 'guest'
+        account_data = dict()
+        if os.path.exists(file):
+            with open(file, 'r') as f: account_data = json.loads(f.read())
+        if username in account_data.keys(): return username, account_data.get(username, False)
+        return username, None
+
+    def set_sid(self, file, session_id, username=None):
+        if username is None: username = 'guest'
+        account_data = dict()
+        if os.path.exists(file):
+            with open(file, 'r') as f: account_data = json.loads(f.read())
+        print(username, session_id)
+        account_data.update({username: session_id})
+        with open(file, 'w') as f:
+            f.write(json.dumps(account_data))
         return True
-    
+
     def sendRequest(self, method, http_method, get={}, post={}):
         # prepare values
         get['api_key'] = API_KEY
@@ -259,9 +247,9 @@ class TMDB:
         req.request(http_method, API_URL + method + '?' + get, post)
         response = req.getresponse()
         html = response.read()
-        debug.debug('Request: ' + html)
+        tools.debug('Request', html)
         if response.status != 200 and response.status != 201:
-            debug.debug('[ERROR ' + str(response.status) + ']: ' + html)
+            tools.debug('ERROR ' + str(response.status), html)
             return False
         
         # get json
@@ -269,26 +257,9 @@ class TMDB:
             output = html
             output = json.loads(output)
         except Exception as Error:
-            debug.debug('[GET JSON ERROR]: ' + str(Error))
+            tools.debug('[GET JSON ERROR]: ' + str(Error))
             return {}
             
         return output
-    
-    def loadUSERdata(self):
-        if xbmcvfs.exists(__datapath__ + 'tmdb'):
-            file = open(__datapath__ + 'tmdb', 'r')
-            self.accounts_data = json.loads(file.read())
-            file.close()
-        else:
-            self.accounts_data = {}
-        if self.login in self.accounts_data.keys():
-            self.session_id = self.accounts_data[self.login]
-        else:
-            self.session_id = ''
-                
-    def saveUSERdata(self):
-        self.accounts_data[self.login] = self.session_id
-        file = open(__datapath__ + 'tmdb', 'w')
-        file.write(json.dumps(self.accounts_data))
-        file.close()
+
     

@@ -187,8 +187,8 @@ msgstr "Twoja ocena"
 
 #: GUI
 msgctxt "#32101"
-msgid "Rate sended"
-msgstr "Ocena wysłana"
+msgid "%s - Rate sended"
+msgstr "%s - Ocena wysłana"
 
 #: GUI
 msgctxt "#32102"
@@ -197,8 +197,8 @@ msgstr "Nie mogę znaleźć ID w twojej bazie danych"
 
 #: GUI
 msgctxt "#32110"
-msgid "Login Error"
-msgstr "Błąd logowania"
+msgid "%s - Login Error"
+msgstr "%s - Błąd logowania"
 
 #: GUI
 msgctxt "#32120"
